@@ -79,7 +79,7 @@ const login = (acno, pswd) => {
 }
 
 //deposit
-const Deposit = (acno, password, amt) => {
+const Deposit = (req, acno, password, amt) => {
   var amount = parseInt(amt)
 
   return db.User.findOne({
@@ -87,6 +87,13 @@ const Deposit = (acno, password, amt) => {
     password
   }).then(user => {
     if (user) {
+      if (acno != req.currentAcno) {
+        return {
+          status: false,
+          message: "access denied !!",
+          statusCode: 401
+        }
+      }
       user.balance += amount
       user.transaction.push({
         type: "CREDIT",
@@ -111,12 +118,19 @@ const Deposit = (acno, password, amt) => {
 }
 
 //withdraw
-const withdraw = (acno, password, amt) => {
+const withdraw = (req, acno, password, amt) => {
   var amount = parseInt(amt)
   return db.User.findOne({
     acno, password
-  }).then(user=>{
+  }).then(user => {
     if (user) {
+      if (acno != req.currentAcno) {
+        return {
+          status: false,
+          message: "access denied !!",
+          statusCode: 401
+        }
+      }
       if (user.balance > amount) {
         user.balance -= amount
         user.transaction.push({
@@ -146,7 +160,7 @@ const withdraw = (acno, password, amt) => {
       }
     }
   })
- 
+
 
 }
 
@@ -156,13 +170,13 @@ const withdraw = (acno, password, amt) => {
 const getTransaction = (acno) => {
   return db.User.findOne({
     acno
-  }).then(user=>{
+  }).then(user => {
     if (user) {
       return {
         status: true,
         statusCode: 200,
         transaction: user.transaction
-      } 
+      }
     }
     else {
       return {
@@ -173,10 +187,34 @@ const getTransaction = (acno) => {
     }
   })
 }
+
+//delete
+const deleteAcc = (acno) => {
+  return db.User.deleteOne({
+    acno
+  }).then(user => {
+    if (!user) {
+      return {
+        status: false,
+        message: "operation failed",
+        statusCode: 401
+      }
+    }
+
+    return {
+      status: true,
+      message: "successfully deleted",
+      statusCode: 200
+    }
+  })
+}
+
+
 module.exports = {
   register,
   login,
   Deposit,
   withdraw,
-  getTransaction
+  getTransaction,
+  deleteAcc
 }

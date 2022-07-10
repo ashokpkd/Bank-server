@@ -13,7 +13,8 @@ const app = express()
 
 //cors use in server app
 app.use(cors({
-    origin:'http://localhost:4200'
+    origin:'http://localhost:4200',
+    credentials:true
 }))
 //parse JSON data
 app.use(express.json())
@@ -32,6 +33,7 @@ const jwtMiddleware = (req, res, next) => {
         token = req.headers['x-access-token']
         const data = jwt.verify(token, 'nospacesecretkey12345')
         console.log(data);
+        req.currentAcno=data.currentAcno
         next()
     }
     catch {
@@ -67,7 +69,7 @@ app.post('/login', (req, res) => {
 //deposit API
 app.post('/Deposit', jwtMiddleware, (req, res) => {
     //register solving
-    dataService.Deposit(req.body.acno, req.body.password, req.body.amt)
+    dataService.Deposit(req,req.body.acno, req.body.password, req.body.amt)
     .then(result => {
         res.status(result.statusCode).json(result)
     })
@@ -76,7 +78,7 @@ app.post('/Deposit', jwtMiddleware, (req, res) => {
 //withdraw API
 app.post('/withdraw', jwtMiddleware, (req, res) => {
     //register solving
-     dataService.withdraw(req.body.acno, req.body.password, req.body.amt)
+     dataService.withdraw(req,req.body.acno, req.body.password, req.body.amt)
      .then(result => {
         res.status(result.statusCode).json(result)
     })
@@ -90,6 +92,16 @@ app.post('/transaction', jwtMiddleware, (req, res) => {
     res.status(result.statusCode).json(result)
 })
 })
+
+//delete api
+app.delete('/deleteAcc/:acno',jwtMiddleware,(req,res)=>{
+       //delete solving
+ dataService.deleteAcc(req.params.acno)
+ .then(result => {
+    res.status(result.statusCode).json(result)
+})
+})
+
 //user request solving
 //GET request
 app.get('/', (req, res) => {
